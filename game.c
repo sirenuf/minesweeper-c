@@ -28,6 +28,7 @@ void init_board(void)
 
 void draw_board(void)
 {
+    /* Draws the top border. */
     printf(" ┌");
     for (int x = 0; x < X_AMOUNT; x++) {
         if (x+1 == X_AMOUNT)
@@ -37,6 +38,7 @@ void draw_board(void)
     }
 
     for (int y = 0; y < Y_AMOUNT; y++) {
+        /* Draws the left border. */
         printf(" |");
         for (int x = 0; x < X_AMOUNT; x++) {
             struct Cell *target = &board[x][y];
@@ -50,7 +52,8 @@ void draw_board(void)
             } else {
                 printf("X");
             }
-
+            
+            /* Draws the spaces between X characters and the right border. */
             if (x+1 != X_AMOUNT)
                 printf(" ");
             else
@@ -60,6 +63,7 @@ void draw_board(void)
         printf("\n");
     }
 
+    /* Draws bottom border. */
     printf(" └");
     for (int x = 0; x < X_AMOUNT; x++) {
         if (x+1 == X_AMOUNT)
@@ -67,7 +71,7 @@ void draw_board(void)
         else
             printf("--");
     }
-    
+    /* Draws X cords under the bottom border. */
     printf("\n  ");
     for (int x = 0; x < X_AMOUNT; x++)
         printf("%d ", x+1);
