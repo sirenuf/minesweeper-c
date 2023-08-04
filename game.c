@@ -71,7 +71,7 @@ void draw_board(void)
         for (int x = 0; x < X_AMOUNT; x++) {
             struct Cell *target = &board[x][y];
 
-            if (target->IsMine) //&& target->IsRevealed)
+            if (target->IsMine && target->IsRevealed)
                 printf("Q");
             else if (target->IsRevealed) {
                 if (target->NeighbourMines > 0)
@@ -109,7 +109,7 @@ void draw_board(void)
 
 void reveal_empty_cells(int X, int Y)
 {
-    if (X < 0 || X > X_AMOUNT || Y < 0 || Y > Y_AMOUNT || board[X][Y].IsRevealed)
+    if (X < 0 || X > X_AMOUNT || Y < 0 || Y > Y_AMOUNT || board[X][Y].IsRevealed || board[X][Y].IsMine)
         return;
 
     board[X][Y].IsRevealed = true;
