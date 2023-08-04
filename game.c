@@ -21,9 +21,10 @@ void init_board(void)
     /* Random number seed. */
     srand(time(0));
 
+    /* Install mines across random cells. */
     int MinesToSet = MINES;
     while (MinesToSet > 0) {
-        // Generate random mine location
+        /* Generate random cell location */
         int x = rand() % X_AMOUNT;
         int y = rand() % Y_AMOUNT;
 
@@ -34,7 +35,22 @@ void init_board(void)
         
         target->IsMine = true;
         MinesToSet--;
-        
+    }
+
+    /* Store the amount of mines that's near a cell. */
+    for (int y = 0; y < Y_AMOUNT; y++) {
+        for (int x = 0; x < X_AMOUNT; x++) {
+            struct Cell *Target = &board[x][y];
+
+            for (int offsetY = -1; offsetY <= 1; offsetY++) {
+                for (int offsetX = -1; offsetX <= 1; offsetX++) {
+                    if (y+offsetY >= 0 && y+offsetY < Y_AMOUNT && x+offsetX >= 0 && y+offsetX < X_AMOUNT) {
+                        if (board[x+offsetX][y+offsetY].IsMine)
+                            Target->NeighbourMines++;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -91,7 +107,7 @@ void draw_board(void)
 void reveal_cell(int X, int Y)
 {
     struct Cell *target = &board[X][Y];
-
+    printf("Mines: %d\n", target->NeighbourMines);
     target->IsRevealed = true;
 }
 
