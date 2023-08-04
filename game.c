@@ -73,9 +73,12 @@ void draw_board(void)
 
             if (target->IsMine) //&& target->IsRevealed)
                 printf("Q");
-            else if (target->IsRevealed)
-                printf("-");
-            else
+            else if (target->IsRevealed) {
+                if (target->NeighbourMines > 0)
+                    printf("%d", target->NeighbourMines);
+                else
+                    printf(" ");
+            } else
                 printf("X");
             
             /* Draws the spaces between X characters and the right border. */
@@ -104,10 +107,34 @@ void draw_board(void)
 }
 
 
+void reveal_empty_cells(int X, int Y)
+{
+    if (X < 0 || X > X_AMOUNT || Y < 0 || Y > Y_AMOUNT || board[X][Y].IsRevealed)
+        return;
+
+    board[X][Y].IsRevealed = true;
+
+    /* Halt recursion if cell isn't empty. */
+    if (!board[X][Y].NeighbourMines == 0)
+        return;
+
+    /* Recursive function to reveal empty cells. */
+    for (int offsetY = -1; offsetY <= 1; offsetY++) {
+        for (int offsetX = -1; offsetX <= 1; offsetX++) {
+            reveal_empty_cells(X+offsetX, Y+offsetY);
+        }
+    }
+}
+
+
 void reveal_cell(int X, int Y)
 {
     struct Cell *target = &board[X][Y];
-    printf("Mines: %d\n", target->NeighbourMines);
+
+    if (target->NeighbourMines == 0) {
+        reveal_empty_cells(X, Y);
+    }
+
     target->IsRevealed = true;
 }
 
