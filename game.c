@@ -1,28 +1,40 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
+#include <stdlib.h>
 
-#define X_AMOUNT 8
-#define Y_AMOUNT 8
+#define X_AMOUNT 9
+#define Y_AMOUNT 9
+#define MINES    10
 
 struct Cell
 {
-    bool isMine;
-    bool isRevealed;
-    int  neighbourMines;
+    bool IsMine;
+    bool IsRevealed;
+    int  NeighbourMines;
 };
 
 struct Cell board[X_AMOUNT][Y_AMOUNT];
 
 void init_board(void)
 {
-    for (int x = 0; x < X_AMOUNT; x++) {
-        for (int y = 0; y < Y_AMOUNT; y++) {
-            struct Cell *target = &board[x][y];
+    /* Random number seed. */
+    srand(time(0));
 
-            target->isMine = false;
-            target->isRevealed = false;
-            //target->neighbourMines = 0; To be made
-        }
+    int MinesToSet = MINES;
+    while (MinesToSet > 0) {
+        // Generate random mine location
+        int x = rand() % X_AMOUNT;
+        int y = rand() % Y_AMOUNT;
+
+        struct Cell *target = &board[x][y];
+        
+        if (target->IsMine)
+            continue;
+        
+        target->IsMine = true;
+        MinesToSet--;
+        
     }
 }
 
@@ -43,15 +55,12 @@ void draw_board(void)
         for (int x = 0; x < X_AMOUNT; x++) {
             struct Cell *target = &board[x][y];
 
-            if (target->isMine) {
-                printf("It's a mine!\n"); // Soon make the game exit.
-                return;
-            } else if (target->isRevealed) {
-                target->isRevealed = true;
+            if (target->IsMine) //&& target->IsRevealed)
+                printf("Q");
+            else if (target->IsRevealed)
                 printf("-");
-            } else {
+            else
                 printf("X");
-            }
             
             /* Draws the spaces between X characters and the right border. */
             if (x+1 != X_AMOUNT)
@@ -82,8 +91,8 @@ void draw_board(void)
 void reveal_cell(int X, int Y)
 {
     struct Cell *target = &board[X][Y];
-    printf("X: %d\nY: %d", X, Y);
-    target->isRevealed = true;
+
+    target->IsRevealed = true;
 }
 
 
