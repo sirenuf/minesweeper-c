@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #define X_AMOUNT 9
-#define Y_AMOUNT 9
+#define Y_AMOUNT 6
 #define MINES    10
 
 struct Cell
@@ -15,6 +15,18 @@ struct Cell
 };
 
 struct Cell board[X_AMOUNT][Y_AMOUNT];
+
+/* Store colour codes */
+const int ColourCodes[8][2] = { 
+    { 34, false }, // Blue
+    { 32, false }, // Green
+    { 31, false }, // Red
+    { 34, true  }, // Dark blue
+    { 31, true  }, // Dark red
+    { 36, false }, // Cyan
+    { 37, true  }, // Black (dark white)
+    { 37, false }  // Grey  (white)
+};
 
 void init_board(void)
 {
@@ -44,7 +56,16 @@ void init_board(void)
 
             for (int offsetY = -1; offsetY <= 1; offsetY++) {
                 for (int offsetX = -1; offsetX <= 1; offsetX++) {
-                    if (y+offsetY >= 0 && y+offsetY < Y_AMOUNT && x+offsetX >= 0 && y+offsetX < X_AMOUNT) {
+                    /* 
+                     *  Make sure the cell check doesn't go out of bounds
+                     *  E.g; Y: -1 / Y: Y_AMOUNT + 1
+                     */
+                    if ( y+offsetY >= 0 && y+offsetY < Y_AMOUNT &&
+                         x+offsetX >= 0 && y+offsetX < X_AMOUNT ) {
+                        /*
+                         *  If the offset cell is a mine then 
+                         *  increment the target cell's NeigbourMines.
+                         */
                         if (board[x+offsetX][y+offsetY].IsMine)
                             Target->NeighbourMines++;
                     }
@@ -71,13 +92,27 @@ void draw_board(void)
         for (int x = 0; x < X_AMOUNT; x++) {
             struct Cell *target = &board[x][y];
 
+            /* Draw 'Q' if cell is a mine */
             if (target->IsMine && target->IsRevealed)
                 printf("Q");
+
             else if (target->IsRevealed) {
-                if (target->NeighbourMines > 0)
-                    printf("%d", target->NeighbourMines);
-                else
+                if (target->NeighbourMines > 0) {
+                    /* 'Amount' is the amount of NeighbourMines
+                     *  off by 1 to access 1st index in matrix. */
+                    int Amount = target->NeighbourMines - 1;
+
+                    /* If the colour is dark, then add 'dim' code to printf. */
+                    if (ColourCodes[Amount][1])
+                        printf("\033[0;%dm\033[2m%d\033[0m", ColourCodes[Amount][0], Amount+1);
+                    /* Same but doesn't add dim character */
+                    else if (!ColourCodes[Amount][1])
+                        printf("\033[0;%dm%d\033[0m", ColourCodes[Amount][0], Amount+1);
+
+                } else
                     printf(" ");
+            
+            /* Draw X if cell is not revealed */
             } else
                 printf("X");
             
@@ -109,8 +144,10 @@ void draw_board(void)
 
 void reveal_empty_cells(int X, int Y)
 {
-    if (X < 0 || X > X_AMOUNT || Y < 0 || Y > Y_AMOUNT || board[X][Y].IsRevealed || board[X][Y].IsMine)
-        return;
+    if ( X < 0 || X > X_AMOUNT  ||
+         Y < 0 || Y > Y_AMOUNT  ||
+         board[X][Y].IsRevealed || board[X][Y].IsMine )
+            return;
 
     board[X][Y].IsRevealed = true;
 
@@ -141,8 +178,10 @@ void reveal_cell(int X, int Y)
 
 int main(void)
 {
-    // Make cell struct in main and pass
-    // to draw_board.
+    /* TODO:
+     * Make cell struct in main
+     * and pass to draw_board.
+     */
     int PlaceX;
     int PlaceY;
     bool Running = true;
