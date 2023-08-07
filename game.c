@@ -144,15 +144,15 @@ void draw_board(void)
 
 void reveal_empty_cells(int X, int Y)
 {
-    if ( X < 0 || X > X_AMOUNT  ||
-         Y < 0 || Y > Y_AMOUNT  ||
-         board[X][Y].IsRevealed || board[X][Y].IsMine )
+    if ( X < 0 || X >= X_AMOUNT  ||
+         Y < 0 || Y >= Y_AMOUNT  ||
+         board[X][Y].IsRevealed  || board[X][Y].IsMine )
             return;
 
     board[X][Y].IsRevealed = true;
 
     /* Halt recursion if cell isn't empty. */
-    if (!board[X][Y].NeighbourMines == 0)
+    if (board[X][Y].NeighbourMines > 0)
         return;
 
     /* Recursive function to reveal empty cells. */
