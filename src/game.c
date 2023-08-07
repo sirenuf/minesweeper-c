@@ -3,6 +3,8 @@
 #include <time.h>
 #include <stdlib.h>
 
+#include "input.h"
+
 #define X_AMOUNT 9
 #define Y_AMOUNT 6
 #define MINES    10
