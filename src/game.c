@@ -13,6 +13,7 @@ struct Cell
 {
     bool IsMine;
     bool IsRevealed;
+    bool IsSelected;
     int  NeighbourMines;
 };
 
@@ -77,7 +78,7 @@ void init_board(void)
     }
 }
 
-void draw_board(void)
+void draw_board()
 {
     /* Draws the top border. */
     printf(" ┌");
@@ -115,9 +116,11 @@ void draw_board(void)
                     printf(" ");
             
             /* Draw X if cell is not revealed */
-            } else
+            } else if (target->IsSelected)
+                printf("\033[0;47mX\033[0m");
+            else
                 printf("X");
-            
+                            
             /* Draws the spaces between X characters and the right border. */
             if (x+1 != X_AMOUNT)
                 printf(" ");
@@ -127,7 +130,6 @@ void draw_board(void)
         }
         printf("\n");
     }
-
     /* Draws bottom border. */
     printf(" └");
     for (int x = 0; x < X_AMOUNT; x++) {
@@ -136,11 +138,13 @@ void draw_board(void)
         else
             printf("--");
     }
+    
     /* Draws X cords under the bottom border. */
     printf("\n  ");
     for (int x = 0; x < X_AMOUNT; x++)
         printf("%d ", x+1);
-
+    
+    printf("\n\n");
 }
 
 
@@ -178,27 +182,59 @@ void reveal_cell(int X, int Y)
 }
 
 
+void toggle_cell_as_selected(bool isSelected, int X, int Y)
+{
+    struct Cell *Target = &board[X][Y];
+
+    Target->IsSelected = isSelected;
+}
+
+
 int main(void)
 {
     /* TODO:
      * Make cell struct in main
      * and pass to draw_board.
      */
-    int PlaceX;
-    int PlaceY;
+
+    int PlaceX = 0;
+    int PlaceY = 0;
+    int Answer;
     bool Running = true;
 
     init_board();
 
-    while (Running) {
-        draw_board();
+    while (Running) {        
+        toggle_cell_as_selected(true, PlaceX, PlaceY);
+        draw_board(PlaceX, PlaceY);
+        toggle_cell_as_selected(false, PlaceX, PlaceY);
+        
+        switch (handle_input()) {
+            case QUIT:
+                Running = false;
+                break;
+            case UP:
+                PlaceY--;
+                break;
+            case DOWN:
+                PlaceY++;
+                break;
+            case RIGHT:
+                PlaceX++;
+                break;
+            case LEFT:
+                PlaceX--;
+                break;
+        }
 
-        printf("\n>");
-        scanf("%d %d", &PlaceX, &PlaceY);
-        PlaceX--;
-        PlaceY--;
-        reveal_cell(PlaceX, PlaceY);
-        printf("\n");
+        if (PlaceX < 0)
+            PlaceX = X_AMOUNT - 1;
+        else if (PlaceX >= X_AMOUNT)
+            PlaceX = 0;
+        else if (PlaceY < 0)
+            PlaceY = Y_AMOUNT - 1;
+        else if (PlaceY >= Y_AMOUNT)
+            PlaceY = 0;
     }
 
     return 0;
