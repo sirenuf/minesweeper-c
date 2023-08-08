@@ -6,21 +6,28 @@
 #include "input.h"
 
 #define X_AMOUNT 9
-#define Y_AMOUNT 6
+#define Y_AMOUNT 9
 #define MINES    10
+
+enum Status {
+    RUNNING,
+    LOST,
+    WON
+};
 
 struct Cell
 {
     bool IsMine;
     bool IsRevealed;
     bool IsSelected;
+    bool IsFlagged;
     int  NeighbourMines;
 };
 
 struct Cell board[X_AMOUNT][Y_AMOUNT];
 
 /* Store colour codes */
-const int ColourCodes[8][2] = { 
+const int ColourCodes[9][2] = { 
     { 34, false }, // Blue
     { 32, false }, // Green
     { 31, false }, // Red
@@ -28,7 +35,8 @@ const int ColourCodes[8][2] = {
     { 31, true  }, // Dark red
     { 36, false }, // Cyan
     { 37, true  }, // Black (dark white)
-    { 37, false }  // Grey  (white)
+    { 37, false }, // Grey  (white)
+    { 33, false }  // Yellow (reserved for flags)
 };
 
 void init_board(void)
@@ -78,7 +86,7 @@ void init_board(void)
     }
 }
 
-void draw_board()
+void draw_board(void)
 {
     /* Draws the top border. */
     printf(" ┌");
@@ -97,7 +105,10 @@ void draw_board()
 
             /* Draw 'Q' if cell is a mine */
             if (target->IsMine && target->IsRevealed)
-                printf("Q");
+                printf("%sQ\033[0m", is_selected(target->IsSelected));
+
+            else if (target->IsFlagged)
+                printf("\033[0;%dm%sF\033[0m", ColourCodes[8][0], is_selected(target->IsSelected));
 
             else if (target->IsRevealed) {
                 if (target->NeighbourMines > 0) {
@@ -107,19 +118,17 @@ void draw_board()
 
                     /* If the colour is dark, then add 'dim' code to printf. */
                     if (ColourCodes[Amount][1])
-                        printf("\033[0;%dm\033[2m%d\033[0m", ColourCodes[Amount][0], Amount+1);
+                        printf("\033[0;%dm\033[2m%s%d\033[0m", ColourCodes[Amount][0], is_selected(target->IsSelected), Amount+1);
                     /* Same but doesn't add dim character */
                     else if (!ColourCodes[Amount][1])
-                        printf("\033[0;%dm%d\033[0m", ColourCodes[Amount][0], Amount+1);
+                        printf("\033[0;%dm%s%d\033[0m", ColourCodes[Amount][0], is_selected(target->IsSelected), Amount+1);
 
                 } else
-                    printf(" ");
+                    printf("%s \033[0m", is_selected(target->IsSelected));
             
             /* Draw X if cell is not revealed */
-            } else if (target->IsSelected)
-                printf("\033[0;47mX\033[0m");
-            else
-                printf("X");
+            } else
+                printf("%sX\033[0m", is_selected(target->IsSelected));
                             
             /* Draws the spaces between X characters and the right border. */
             if (x+1 != X_AMOUNT)
@@ -170,15 +179,32 @@ void reveal_empty_cells(int X, int Y)
 }
 
 
-void reveal_cell(int X, int Y)
+bool reveal_cell(int X, int Y)
 {
-    struct Cell *target = &board[X][Y];
+    bool HitMine = false;
+    struct Cell *Target = &board[X][Y];
 
-    if (target->NeighbourMines == 0) {
+    /* Return 1 if Mine has been hit. */
+    if (Target->IsMine)
+        HitMine = true;
+
+    if (Target->IsFlagged)
+        return false;
+
+    if (Target->NeighbourMines == 0)
         reveal_empty_cells(X, Y);
-    }
 
-    target->IsRevealed = true;
+    Target->IsRevealed = true;
+
+    return HitMine;
+}
+
+
+void flag_cell(int X, int Y)
+{
+    struct Cell *Target = &board[X][Y];
+    
+    Target->IsFlagged = !Target->IsFlagged;
 }
 
 
@@ -199,19 +225,26 @@ int main(void)
 
     int PlaceX = 0;
     int PlaceY = 0;
-    int Answer;
+    int Status = RUNNING;
     bool Running = true;
 
     init_board();
 
-    while (Running) {        
+    while (Running) {
         toggle_cell_as_selected(true, PlaceX, PlaceY);
-        draw_board(PlaceX, PlaceY);
+        draw_board();
         toggle_cell_as_selected(false, PlaceX, PlaceY);
-        
         switch (handle_input()) {
             case QUIT:
                 Running = false;
+                break;
+            case FLAG:
+                flag_cell(PlaceX, PlaceY);
+                break;
+            case REVEAL:
+                bool Result = reveal_cell(PlaceX, PlaceY);
+                if (Result)
+                    Status = LOST;
                 break;
             case UP:
                 PlaceY--;
@@ -235,7 +268,19 @@ int main(void)
             PlaceY = Y_AMOUNT - 1;
         else if (PlaceY >= Y_AMOUNT)
             PlaceY = 0;
+        
+        
+        if (Status == WON) {
+            printf("Congratulations! You won!\n");
+            Running = false;
+        }
+        
+        if (Status == LOST) {
+            printf("You hit a mine! You lost.\n");
+            Running = false;
+        }
     }
+    draw_board();
 
     return 0;
 }

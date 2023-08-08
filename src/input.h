@@ -12,6 +12,14 @@ enum Commands {
     LEFT
 };
 
+const char* is_selected(bool Selected)
+{
+    if (Selected)
+        return "\033[0;47m";
+    
+    return "";
+}
+
 void toggle_canonical(bool Toggle) {
     struct termios Attr;
 
@@ -48,13 +56,15 @@ enum Commands handle_input(void) {
         if (Buffer == 27 && read(STDIN_FILENO, &Buffer, 1) == 1 &&
             Buffer == 91 && read(STDIN_FILENO, &Buffer, 1) == 1 && 
             Buffer >= 65 && Buffer <= 68 )
-            {
-                /* E.g: 65 - 63 = 2. */
+            {   /* E.g: 65 - 63 = 2. */
                 Result = Buffer - 63;
-            } else if(Buffer == 'f' || Buffer == 'F')
-                Result = FLAG;
-            else if(Buffer == 'q' || Buffer == 'Q')
-                Result = QUIT;
+            }
+        else if (Buffer == 'f' || Buffer == 'F')
+            Result = FLAG;
+        else if (Buffer == 'q' || Buffer == 'Q')
+            Result = QUIT;
+        else if (Buffer == 32) // Spacebar
+            Result = REVEAL;
     }
     toggle_canonical(true);
     return Result;
