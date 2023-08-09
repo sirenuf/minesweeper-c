@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "input.h"
 
@@ -10,6 +11,7 @@
 #define MINES    10
 
 enum Status {
+    EXIT,
     RUNNING,
     LOST,
     WON
@@ -41,6 +43,13 @@ const int ColourCodes[9][2] = {
 
 void init_board(void)
 {
+    /* Reset board structs. */
+    for (int x = 0; x < X_AMOUNT; x++) {
+        for (int y = 0; y < Y_AMOUNT; y++) {
+            memset(&board[x][y], 0, sizeof(board[x][y]));
+        }
+    }
+
     /* Random number seed. */
     srand(time(0));
 
@@ -58,6 +67,7 @@ void init_board(void)
         
         target->IsMine = true;
         MinesToSet--;
+        printf("X: %d\nY: %d\n\n", x+1, y+1);
     }
 
     /* Store the amount of mines that's near a cell. */
@@ -72,7 +82,7 @@ void init_board(void)
                      *  E.g; Y: -1 / Y: Y_AMOUNT + 1
                      */
                     if ( y+offsetY >= 0 && y+offsetY < Y_AMOUNT &&
-                         x+offsetX >= 0 && y+offsetX < X_AMOUNT ) {
+                         x+offsetX >= 0 && x+offsetX < X_AMOUNT ) {
                         /*
                          *  If the offset cell is a mine then 
                          *  increment the target cell's NeigbourMines.
@@ -159,15 +169,20 @@ void draw_board(void)
 
 void reveal_empty_cells(int X, int Y)
 {
+    struct Cell *Target = &board[X][Y];
+
     if ( X < 0 || X >= X_AMOUNT  ||
          Y < 0 || Y >= Y_AMOUNT  ||
-         board[X][Y].IsRevealed  || board[X][Y].IsMine )
+         Target->IsRevealed  || Target->IsMine )
             return;
 
-    board[X][Y].IsRevealed = true;
+    if (Target->IsFlagged)
+        return;
+
+    Target->IsRevealed = true;
 
     /* Halt recursion if cell isn't empty. */
-    if (board[X][Y].NeighbourMines > 0)
+    if (Target->NeighbourMines > 0)
         return;
 
     /* Recursive function to reveal empty cells. */
@@ -178,33 +193,57 @@ void reveal_empty_cells(int X, int Y)
     }
 }
 
+enum Status check_if_won()
+{
+    int FlaggedMines  = 0;
+    int RevealedCells = 0;
+    for (int x = 0; x < X_AMOUNT; x++) {
+        for (int y = 0; y < Y_AMOUNT; y++) {
+            struct Cell *Target = &board[x][y];
+
+            if (Target->IsMine && Target->IsFlagged)
+                FlaggedMines++;
+
+            if (Target->IsRevealed)
+                RevealedCells++;
+        }
+    }
+
+    if (FlaggedMines == MINES && RevealedCells == X_AMOUNT * Y_AMOUNT - MINES)
+        return WON;
+
+    return RUNNING;
+}
 
 bool reveal_cell(int X, int Y)
 {
-    bool HitMine = false;
     struct Cell *Target = &board[X][Y];
-
-    /* Return 1 if Mine has been hit. */
-    if (Target->IsMine)
-        HitMine = true;
 
     if (Target->IsFlagged)
         return false;
+
+    /* Return 1 if Mine has been hit. */
+    if (Target->IsMine)
+        return true;
 
     if (Target->NeighbourMines == 0)
         reveal_empty_cells(X, Y);
 
     Target->IsRevealed = true;
 
-    return HitMine;
+    return false;
 }
 
 
 void flag_cell(int X, int Y)
 {
     struct Cell *Target = &board[X][Y];
-    
+
+    if (Target->IsRevealed)
+        return;
+
     Target->IsFlagged = !Target->IsFlagged;
+
 }
 
 
@@ -222,65 +261,86 @@ int main(void)
      * Make cell struct in main
      * and pass to draw_board.
      */
+    while (true) {
+        int PlaceX = 0;
+        int PlaceY = 0;
+        int Status = RUNNING;
 
-    int PlaceX = 0;
-    int PlaceY = 0;
-    int Status = RUNNING;
-    bool Running = true;
+        init_board();
+        while (Status == RUNNING) {
+            toggle_cell_as_selected(true, PlaceX, PlaceY);
+            draw_board();
+            toggle_cell_as_selected(false, PlaceX, PlaceY);
+            switch (handle_input()) {
+                case QUIT:
+                    Status = EXIT;
+                    break;
+                case FLAG:
+                    flag_cell(PlaceX, PlaceY);
+                    break;
+                case REVEAL:
+                    bool Result = reveal_cell(PlaceX, PlaceY);
+                    if (Result)
+                        Status = LOST;
 
-    init_board();
+                    break;
+                case UP:
+                    PlaceY--;
+                    break;
+                case DOWN:
+                    PlaceY++;
+                    break;
+                case RIGHT:
+                    PlaceX++;
+                    break;
+                case LEFT:
+                    PlaceX--;
+                    break;
+            }
 
-    while (Running) {
-        toggle_cell_as_selected(true, PlaceX, PlaceY);
-        draw_board();
-        toggle_cell_as_selected(false, PlaceX, PlaceY);
-        switch (handle_input()) {
-            case QUIT:
-                Running = false;
-                break;
-            case FLAG:
-                flag_cell(PlaceX, PlaceY);
-                break;
-            case REVEAL:
-                bool Result = reveal_cell(PlaceX, PlaceY);
-                if (Result)
-                    Status = LOST;
-                break;
-            case UP:
-                PlaceY--;
-                break;
-            case DOWN:
-                PlaceY++;
-                break;
-            case RIGHT:
-                PlaceX++;
-                break;
-            case LEFT:
-                PlaceX--;
-                break;
+            /* Bounces cursor. */
+            if (PlaceX < 0)
+                PlaceX = X_AMOUNT - 1;
+            else if (PlaceX >= X_AMOUNT)
+                PlaceX = 0;
+            else if (PlaceY < 0)
+                PlaceY = Y_AMOUNT - 1;
+            else if (PlaceY >= Y_AMOUNT)
+                PlaceY = 0;
+            
+            Status = check_if_won();
         }
 
-        if (PlaceX < 0)
-            PlaceX = X_AMOUNT - 1;
-        else if (PlaceX >= X_AMOUNT)
-            PlaceX = 0;
-        else if (PlaceY < 0)
-            PlaceY = Y_AMOUNT - 1;
-        else if (PlaceY >= Y_AMOUNT)
-            PlaceY = 0;
-        
-        
         if (Status == WON) {
+            draw_board();
             printf("Congratulations! You won!\n");
-            Running = false;
         }
         
         if (Status == LOST) {
+            draw_board();
             printf("You hit a mine! You lost.\n");
-            Running = false;
+        }
+
+        if (Status == EXIT)
+            return 0;
+
+
+
+        if (Status == WON || Status == LOST) {
+            int Answer;
+            printf("Do you want to play again? (y/n)\n");
+            
+            while (true) {
+                printf(">");
+                Answer = getchar();
+                while(getchar() != '\n'); // Clear input.
+                if (Answer == 'y' || Answer == 'Y')
+                    break;
+                else if (Answer == 'n' || Answer == 'N')
+                    return 0;
+            }
         }
     }
-    draw_board();
 
     return 0;
 }
