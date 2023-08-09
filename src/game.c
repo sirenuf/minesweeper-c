@@ -67,7 +67,6 @@ void init_board(void)
         
         target->IsMine = true;
         MinesToSet--;
-        printf("X: %d\nY: %d\n\n", x+1, y+1);
     }
 
     /* Store the amount of mines that's near a cell. */
