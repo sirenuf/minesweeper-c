@@ -309,7 +309,7 @@ int main(void)
             else if (PlaceY >= Y_AMOUNT)
                 PlaceY = 0;
             
-            if (Status != LOST)
+            if (Status == RUNNING)
                 Status = check_if_won();
         }
 
