@@ -222,8 +222,10 @@ bool reveal_cell(int X, int Y)
         return false;
 
     /* Return 1 if Mine has been hit. */
-    if (Target->IsMine)
+    if (Target->IsMine) {
+        Target->IsRevealed = true;
         return true;
+    }
 
     if (Target->NeighbourMines == 0)
         reveal_empty_cells(X, Y);
@@ -307,7 +309,8 @@ int main(void)
             else if (PlaceY >= Y_AMOUNT)
                 PlaceY = 0;
             
-            Status = check_if_won();
+            if (Status != LOST)
+                Status = check_if_won();
         }
 
         if (Status == WON) {
