@@ -12,15 +12,8 @@ enum Commands {
     LEFT
 };
 
-const char* is_selected(bool Selected)
+void toggle_canonical(bool Toggle)
 {
-    if (Selected)
-        return "\033[0;47m";
-    
-    return "";
-}
-
-void toggle_canonical(bool Toggle) {
     struct termios Attr;
 
     tcgetattr(STDIN_FILENO, &Attr);
@@ -33,7 +26,8 @@ void toggle_canonical(bool Toggle) {
     tcsetattr(STDIN_FILENO, TCSANOW, &Attr);
 }
 
-enum Commands handle_input(void) {
+enum Commands handle_input(void)
+{
     /* Disable canonical input. */
     toggle_canonical(false);
 
