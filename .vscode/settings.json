@@ -8,6 +8,8 @@
         "type_traits": "c",
         "utility": "c",
         "random": "c",
-        "input.h": "c"
+        "input.h": "c",
+        "input_windows.h": "c",
+        "game.h": "c"
     }
 }

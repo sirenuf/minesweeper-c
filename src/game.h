@@ -1,7 +1,9 @@
+#pragma once
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define X_AMOUNT 9
 #define Y_AMOUNT 9
@@ -9,10 +11,20 @@
 
 /* If the compiler is running on Windows. */
 #ifdef _WIN32
-    #include <conio.h>
+    #include "win32/cls_windows.h"
 #else
     #define clrscr() printf("\e[1;1H\e[2J")
 #endif
+
+enum Commands {
+    QUIT = -1,
+    FLAG,
+    REVEAL,
+    UP,
+    DOWN,
+    RIGHT,
+    LEFT
+};
 
 const char* is_selected(bool Selected)
 {
@@ -153,11 +165,11 @@ void draw_board(void)
             } else
                 printf("%sX\033[0m", is_selected(target->IsSelected));
                             
-            /* Draws the spaces between X characters and the right border. */
+            /* Draws spaces between cells and finally the border to the right. */
             if (x+1 != X_AMOUNT)
                 printf(" ");
             else
-                printf("|%d", y+1);
+                printf("|");
 
         }
         printf("\n");
@@ -172,9 +184,11 @@ void draw_board(void)
     }
     
     /* Draws X cords under the bottom border. */
+    /*
     printf("\n  ");
     for (int x = 0; x < X_AMOUNT; x++)
         printf("%d ", x+1);
+    */
     
     printf("\n\n");
 }

@@ -2,15 +2,7 @@
 #include <termios.h>
 #include <stdbool.h>
 
-enum Commands {
-    QUIT = -1,
-    FLAG,
-    REVEAL,
-    UP,
-    DOWN,
-    RIGHT,
-    LEFT
-};
+#include "../game.h"
 
 void toggle_canonical(bool Toggle)
 {
@@ -18,9 +10,9 @@ void toggle_canonical(bool Toggle)
 
     tcgetattr(STDIN_FILENO, &Attr);
 
-    if (Toggle)      
+    if (Toggle)
         Attr.c_lflag |= (ICANON | ECHO);  // Enables canonical input
-    else if(!Toggle) 
+    else if(!Toggle)
         Attr.c_lflag &= ~(ICANON | ECHO); // Disables canonical input
 
     tcsetattr(STDIN_FILENO, TCSANOW, &Attr);
@@ -28,11 +20,11 @@ void toggle_canonical(bool Toggle)
 
 enum Commands handle_input(void)
 {
-    /* Disable canonical input. */
-    toggle_canonical(false);
-
     char Buffer;
     int Result = -2;
+
+    /* Disable canonical input. */
+    toggle_canonical(false);
 
     /*
      * Keep listening for new keypress.

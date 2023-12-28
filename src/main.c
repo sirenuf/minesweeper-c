@@ -1,11 +1,28 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "input.h"
+#ifdef _WIN32
+    #include <Windows.h>
+    #include <locale.h>                  // Read setlocale comment.
+    #include "win32/input_windows.h"
+#elif defined(unix) || defined(__MACH__) // Unix generic or OS X.
+    #include "unix/input_unix.h"
+#endif
+
 #include "game.h"
 
 int main(void)
 {
+    #ifdef _WIN32                         // Extremely stupid Windows moment. To display unicode
+        setlocale(LC_ALL, "en_US.UTF-8"); // chars on windows to my knowledge is this the easiest solution.
+        
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE); // Need to enable VT processing to display colour escape codes in cmd.exe!..
+        DWORD dwMode;                                  // ...supposedly only supports early win 10 builds and later...
+        GetConsoleMode(hOut, &dwMode);                 // But I don't care anymore.
+        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;  // I will not opt for backwards compatibility.
+        SetConsoleMode(hOut, dwMode);
+    #endif
+
     /* TODO:
      * Make cell struct in main
      * and pass to draw_board.
